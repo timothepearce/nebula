@@ -2,10 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlmodel import Column, Relationship, SQLModel, Session, Field, JSON
+from sqlmodel import Column, Relationship, SQLModel, Session, Field, JSON, select
 
-from synda.database import engine
 from synda.model.step import Step, StepStatus
+from synda.model.step_node import StepNode
+from synda.model.node import Node
 
 if TYPE_CHECKING:
     from synda.config import Config
@@ -51,6 +52,13 @@ class Run(SQLModel, table=True):
         session.refresh(run, ["steps"])
 
         return run
+
+    def restart_run(self, session: Session, last_failed_step: Step) -> tuple[list[Node],list[Step]]:
+        input_node_ids: list[StepNode] = session.exec(
+            select(StepNode.node_id).where(StepNode.step_id==last_failed_step.id)
+        ).fetchall()
+        input_nodes: list[Node] = session.exec(select(Node).where(Node.id.in_(input_node_ids))).fetchall()
+        return input_nodes, self.steps[last_failed_step.position-1:]
 
     def update(self, session: Session, status: RunStatus) -> "Run":
         self.status = status
