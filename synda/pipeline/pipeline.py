@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from jsonschema.exceptions import ValidationError
 from sqlmodel import Session, select
 
 from synda.database import engine
@@ -44,8 +45,14 @@ class Pipeline:
 
     def execute_from_last_failed_step(self):
         try:
-            last_failed_step: Step = self.session.exec(select(Step).where(Step.status==StepStatus.ERRORED)).fetchall()[-1]
+            last_failed_step: Step = self.session.exec(
+                select(Step).where(Step.status==StepStatus.ERRORED)
+            ).fetchall()[-1]
             self.run = self.session.exec(select(Run).where(Run.id == last_failed_step.run_id)).first()
+
+            if self.run.config != self.config.model_dump():
+                raise ValidationError("The actual config is different from the restarted run config")
+
             self.run.update(self.session, RunStatus.RUNNING)
             input_nodes, remaining_steps = self.run.restart_run(self.session, last_failed_step=last_failed_step)
 
