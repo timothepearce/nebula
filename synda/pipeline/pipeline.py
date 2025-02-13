@@ -5,8 +5,6 @@ from sqlmodel import Session, select
 from synda.database import engine
 from synda.model.run import Run, RunStatus
 from synda.model.step import Step, StepStatus
-from synda.model.step_node import StepNode
-from synda.model.node import Node
 from synda.utils.env import is_debug_enabled
 
 if TYPE_CHECKING:
@@ -46,8 +44,8 @@ class Pipeline:
     def execute_from_last_failed_step(self):
         try:
             last_failed_step: Step = self.session.exec(
-                select(Step).where(Step.status==StepStatus.ERRORED)
-            ).fetchall()[-1]
+                select(Step).where(Step.status==StepStatus.ERRORED).order_by(Step.id.desc())
+            ).first()
             self.run = self.session.exec(select(Run).where(Run.id == last_failed_step.run_id)).first()
 
             if self.run.config != self.config.model_dump():
