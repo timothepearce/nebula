@@ -46,13 +46,7 @@ class Pipeline:
             last_failed_step: Step = self.session.exec(
                 select(Step).where(Step.status==StepStatus.ERRORED).order_by(Step.id.desc())
             ).first()
-            self.run = self.session.exec(select(Run).where(Run.id == last_failed_step.run_id)).first()
-
-            if self.run.config != self.config.model_dump():
-                raise ValidationError("The actual config is different from the restarted run config")
-
-            self.run.update(self.session, RunStatus.RUNNING)
-            input_nodes, remaining_steps = self.run.restart_run(self.session, last_failed_step=last_failed_step)
+            self.run, input_nodes, remaining_steps = Run.restart_from_step(self.session, self.config, last_failed_step)
 
             for step_ in remaining_steps:
                 if is_debug_enabled():
@@ -62,6 +56,10 @@ class Pipeline:
                     self.session, self.run, step_
                 )
                 input_nodes = executor.execute_and_update_step(input_nodes, restarted=True)
+
+                self.output_saver.save(input_nodes)
+
+            self.run.update(self.session, RunStatus.FINISHED)
         except Exception as e:
             self.run.update(self.session, RunStatus.ERRORED)
             raise e

@@ -14,10 +14,10 @@ def generate_command(
             dir_okay=False,
             resolve_path=True,
         ),
-        from_last_failed: bool = typer.Option(
+        retry: bool = typer.Option(
             typer.Option(
                 False,
-                "--from-last-failed",
+                "--retry",
                 "-k",
                 help="Run the pipeline from last failed step"
             )
@@ -26,7 +26,7 @@ def generate_command(
     """Run a pipeline with provided configuration."""
     config = Config.load_config(config_file)
     pipeline = Pipeline(config)
-    if from_last_failed:
+    if retry:
         pipeline.execute_from_last_failed_step()
     else:
         pipeline.execute()
