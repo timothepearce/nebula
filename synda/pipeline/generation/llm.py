@@ -21,7 +21,6 @@ class LLM(Executor):
         template = self.config.parameters.template
         prompts = PromptBuilder.build(self.session, template, input_data)
         result = []
-
         with self.progress.task("Generating...", len(input_data)) as advance:
             for node, prompt in zip(input_data, prompts):
                 llm_answer = LLMProvider.call(

@@ -24,6 +24,7 @@ class CSVInputProperties(InputProperties):
     def _validate_file(self) -> None:
         try:
             df = pd.read_csv(self.path, sep=self.separator)
+
             if self.target_column not in df.columns:
                 raise ValueError(
                     f"Target column '{self.target_column}' not found in CSV file. Available columns: {', '.join(df.columns)}"

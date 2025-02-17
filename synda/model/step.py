@@ -67,7 +67,7 @@ class Step(SQLModel, table=True):
 
         return self
 
-    def set_running(self, session: Session, input_nodes: list[Node]) -> "Step":
+    def set_running(self, session: Session, input_nodes: list[Node], restarted: bool=False) -> "Step":
         self.status = StepStatus.RUNNING
         self.run_at = datetime.now()
 
@@ -80,7 +80,10 @@ class Step(SQLModel, table=True):
             step_node = StepNode(
                 step_id=self.id, node_id=node.id, relationship_type="input"
             )
-            session.add(step_node)
+            if restarted:
+                continue
+            else:
+                session.add(step_node)
 
         session.add(self)
         session.commit()

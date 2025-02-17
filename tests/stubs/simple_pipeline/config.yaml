@@ -3,6 +3,7 @@ input:
   properties:
     path: tests/stubs/simple_pipeline/source.csv  #source.xlsx
     target_column: content
+    separator: "\t" # xls -> no separator
 
 pipeline:
   - type: split
